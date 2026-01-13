@@ -16,24 +16,27 @@ import frc.robot.subsystems.drive.TunerConstants;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeConstants.PivotState;
 import frc.robot.subsystems.intake.IntakeConstants.RollerState;
+import frc.robot.subsystems.vision.Vision;
 
 public class RobotContainer {
   private final CommandXboxController m_controller = new CommandXboxController(0);
   private final CommandSwerveDrivetrain m_drivetrain = TunerConstants.createDrivetrain();
-  private final SwerveRequest.FieldCentric m_drive = new SwerveRequest.FieldCentric()
+  private final SwerveRequest.FieldCentric m_driveRequest = new SwerveRequest.FieldCentric()
     .withDeadband(Constants.kMaxSpeed * 0.1).withRotationalDeadband(Constants.kMaxAngularRate * 0.1)
     .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
   private final Intake m_intake = new Intake();
+  @SuppressWarnings("unused") // TODO: Add auto-align and auto
+  private final Vision m_vision = new Vision(m_drivetrain);
 
   public RobotContainer() {
     configureBindings();
   }
 
   private void configureBindings() {
-    m_drivetrain.setDefaultCommand(m_drivetrain.applyRequest(()->m_drive
+    m_drivetrain.setDefaultCommand(m_drivetrain.applyRequest(()->m_driveRequest
         .withVelocityX(-m_controller.getLeftY() * Constants.kMaxSpeed) // Drive forward with negative Y (forward)
         .withVelocityY(-m_controller.getLeftX() * Constants.kMaxSpeed) // Drive left with negative X (left)
-        .withRotationalRate(-m_controller.getRightX() * Constants.kMaxAngularRate) // Drive counterclockwise with negative X (left)
+        .withRotationalRate(m_controller.getRightX() * Constants.kMaxAngularRate) // Drive counterclockwise with negative X (left)
       )
     );
 
@@ -46,8 +49,8 @@ public class RobotContainer {
     //Press down d-pad to zero the drivetrain
     m_controller.povDown().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric()));
 
-    final Command defaultState = m_intake.setState(PivotState.SCORE, RollerState.ZERO);
-    final Command defaultPivotState = m_intake.setState(PivotState.SCORE);
+    final Command defaultState = m_intake.setState(PivotState.ZERO, RollerState.ZERO);
+    final Command defaultPivotState = m_intake.setState(PivotState.ZERO);
 
     /*
      * Left trigger to intake from ground
